@@ -47,19 +47,23 @@ public class VistaBuscaMinas extends JFrame {
         int cols = dificultadActual.columnas + extraCols;
         int minas = dificultadActual.minas + extraMinas;
 
-
         estado = LogicaFuncional.crearEstadoVacio(filas, cols);
         estado = LogicaFuncional.colocarMinas(estado, minas, System.nanoTime());
 
-
         panelTablero.removeAll();
+
+        // calcula el tamaño total del tablero según filas/columnas
+        int tamCelda = 40; // tamaño fijo de cada celda
         panelTablero.setLayout(new GridLayout(filas, cols));
+        panelTablero.setPreferredSize(new Dimension(cols * tamCelda, filas * tamCelda));
+
         botones = new JButton[filas][cols];
 
         for (int f = 0; f < filas; f++) {
             for (int c = 0; c < cols; c++) {
                 JButton b = new JButton();
-                b.setFont(new Font("Arial", Font.BOLD, 14));
+                b.setFont(new Font("Arial", Font.BOLD, 18)); // más grande
+                b.setMargin(new Insets(0,0,0,0)); // sin relleno
                 final int ff = f, cc = c;
                 b.addActionListener(e -> manejarClick(ff, cc));
                 botones[f][c] = b;
@@ -69,8 +73,10 @@ public class VistaBuscaMinas extends JFrame {
 
         panelTablero.revalidate();
         panelTablero.repaint();
-        pack();
+        pack(); // ajusta la ventana automáticamente
     }
+
+
 
 
     private void manejarClick(int f, int c) {
@@ -125,13 +131,29 @@ public class VistaBuscaMinas extends JFrame {
                 JButton b = botones[f][c];
                 if (estado.revelado[f][c]) {
                     if (estado.minas[f][c]) {
-                        b.setText("BB");
+                        b.setText("💣"); // puedes usar un emoji o "M"
                         b.setBackground(Color.RED);
                         b.setEnabled(false);
                     } else {
                         int n = LogicaFuncional.contarMinasCerca(estado, f, c);
-                        b.setText(n > 0 ? String.valueOf(n) : "");
+                        if (n > 0) {
+                            b.setText(String.valueOf(n));
+                            // Colores distintos por número (como el juego original)
+                            switch (n) {
+                                case 1 -> b.setForeground(Color.BLUE);
+                                case 2 -> b.setForeground(new Color(0,128,0)); // verde
+                                case 3 -> b.setForeground(Color.RED);
+                                case 4 -> b.setForeground(new Color(0,0,128)); // azul oscuro
+                                case 5 -> b.setForeground(new Color(128,0,0)); // marrón
+                                case 6 -> b.setForeground(Color.CYAN);
+                                case 7 -> b.setForeground(Color.BLACK);
+                                case 8 -> b.setForeground(Color.GRAY);
+                            }
+                        } else {
+                            b.setText("");
+                        }
                         b.setEnabled(false);
+                        b.setBackground(Color.LIGHT_GRAY);
                     }
                 } else {
                     b.setText("");
@@ -141,6 +163,7 @@ public class VistaBuscaMinas extends JFrame {
             }
         }
     }
+
 
 
     private void revelarTodasLasMinasUI() {
