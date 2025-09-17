@@ -10,6 +10,8 @@ public class VistaBuscaMinas extends JFrame {
     private int extraCols  = 0;
     private int extraMinas = 0;
 
+    private int bombasPisadas = 0; // CONTADOR DE BOMBAS PISADAS
+
 
     private Dificultad dificultadActual = Dificultad.MEDIA;
     private JButton[][] botones;
@@ -50,11 +52,13 @@ public class VistaBuscaMinas extends JFrame {
         estado = LogicaFuncional.crearEstadoVacio(filas, cols);
         estado = LogicaFuncional.colocarMinas(estado, minas, System.nanoTime());
 
-        panelTablero.removeAll();
+        bombasPisadas = 0; // reset al iniciar juego
 
-        // calcula el tamaño total del tablero según filas/columnas
-        int tamCelda = 40; // tamaño fijo de cada celda
+        panelTablero.removeAll();
         panelTablero.setLayout(new GridLayout(filas, cols));
+
+        // tamaño fijo de celda
+        int tamCelda = 40;
         panelTablero.setPreferredSize(new Dimension(cols * tamCelda, filas * tamCelda));
 
         botones = new JButton[filas][cols];
@@ -62,8 +66,8 @@ public class VistaBuscaMinas extends JFrame {
         for (int f = 0; f < filas; f++) {
             for (int c = 0; c < cols; c++) {
                 JButton b = new JButton();
-                b.setFont(new Font("Arial", Font.BOLD, 18)); // más grande
-                b.setMargin(new Insets(0,0,0,0)); // sin relleno
+                b.setFont(new Font("Arial", Font.BOLD, 18));
+                b.setMargin(new Insets(0, 0, 0, 0)); // sin relleno
                 final int ff = f, cc = c;
                 b.addActionListener(e -> manejarClick(ff, cc));
                 botones[f][c] = b;
@@ -73,7 +77,7 @@ public class VistaBuscaMinas extends JFrame {
 
         panelTablero.revalidate();
         panelTablero.repaint();
-        pack(); // ajusta la ventana automáticamente
+        pack();
     }
 
 
@@ -84,28 +88,36 @@ public class VistaBuscaMinas extends JFrame {
         estado = r.estado;
 
         if (r.exploto) {
+            bombasPisadas++;
 
+            // Mostrar bomba pisada
             botones[f][c].setText("BB");
-            botones[f][c].setBackground(Color.RED);
+            botones[f][c].setBackground(Color.ORANGE);
+            botones[f][c].setEnabled(false);
 
-            revelarTodasLasMinasUI();
-            int res = JOptionPane.showConfirmDialog(
-                    this,
-                    "¡BOOM! Perdiste :(\n¿Reiniciar?",
-                    "Juego terminado",
-                    JOptionPane.DEFAULT_OPTION
-            );
-            if (res == JOptionPane.OK_OPTION) {
-                //extraFilas += 5;
-                //extraCols  += 5;
-                //extraMinas += 5;
-                reiniciarJuego();
+            if (bombasPisadas >= 2) {
+                // Segunda bomba => perder
+                revelarTodasLasMinasUI();
+                int res = JOptionPane.showConfirmDialog(
+                        this,
+                        "Pisaste 2 bombas, perdiste :(\n¿Reiniciar?",
+                        "Juego terminado",
+                        JOptionPane.DEFAULT_OPTION
+                );
+                if (res == JOptionPane.OK_OPTION) {
+                    reiniciarJuego();
+                }
+                return;
+            } else {
+                // Aviso al jugador que todavía sigue
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Pisaste una bomba, pero tienes otra oportunidad.",
+                        "Advertencia",
+                        JOptionPane.WARNING_MESSAGE
+                );
             }
-
-
-            return;
         }
-
 
         repintarTableroUI();
 
@@ -117,10 +129,8 @@ public class VistaBuscaMinas extends JFrame {
                     JOptionPane.INFORMATION_MESSAGE
             );
             reiniciarJuego();
-
         }
     }
-
 
     private void repintarTableroUI() {
         int filas = botones.length;
@@ -131,7 +141,7 @@ public class VistaBuscaMinas extends JFrame {
                 JButton b = botones[f][c];
                 if (estado.revelado[f][c]) {
                     if (estado.minas[f][c]) {
-                        b.setText("💣"); // puedes usar un emoji o "M"
+                        b.setText("BB");
                         b.setBackground(Color.RED);
                         b.setEnabled(false);
                     } else {
